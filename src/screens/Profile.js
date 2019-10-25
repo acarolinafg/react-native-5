@@ -7,8 +7,11 @@ import {
   Image,
   ScrollView,
   ActivityIndicator,
-  Animated
+  Animated,
+  AsyncStorage
 } from 'react-native';
+import axios from 'axios'
+
 
 
 const profile = {
@@ -32,41 +35,45 @@ const profile = {
 }
 
 export default class Profile extends React.PureComponent {
-  fadeAnimation = new Animated.Value(0)
+  fadeAnimation = new Animated.Value(0);
 
   state = {
-    loading: true
+    loading: true,
+    profile: profile
   }
 
-
-  componentDidMount() {
-    this.finishLoading()
-  }
+  async componentDidMount() {
+    this.finishLoading();
+    const user = JSON.parse(await AsyncStorage.getItem('user'))
+    console.warn(user.token)
+    const { data } = await axios.get('https://api.codenation.dev/v1/me/profile', {
+      headers: {
+        Authorization: user.token
+      }
+    });
+    this.setState({ profile: data, loading: false })
+  };
 
   finishLoading = async () => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 600))
       Animated.timing(this.fadeAnimation, {
         toValue: 1,
         duration: 600,
         useNativeDriver: true
-      }).start()
-
-      this.setState({ loading: false })
+      }).start();
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }
+  };
 
   render() {
-
     return (
       <View style={styles.container}>
         <View style={styles.header}>
           <Image
             className="header-image"
             style={styles.headerImage}
-            source={{uri: 'https://forum.codenation.com.br/uploads/default/original/2X/2/2d2d2a9469f0171e7df2c4ee97f70c555e431e76.png'}}
+            source={{ uri: 'https://forum.codenation.com.br/uploads/default/original/2X/2/2d2d2a9469f0171e7df2c4ee97f70c555e431e76.png' }}
           />
         </View>
         {this.state.loading && (
@@ -80,50 +87,50 @@ export default class Profile extends React.PureComponent {
               <Image
                 className="profile-image"
                 style={styles.profileImage}
-                source={{uri: profile.picture }}
+                source={{ uri: this.state.profile.picture }}
               />
-              <Text className="profile-name" style={styles.profileName}>{profile.name}</Text>
+              <Text className="profile-name" style={styles.profileName}>{this.state.profile.name}</Text>
             </View>
             <Animated.View className="contact-content" style={[styles.userContent, { opacity: this.fadeAnimation }]}>
-                <Text className="contact-label" style={styles.contentLabel}>Linkedin:</Text>
-                <Text className="contact-value" style={{...styles.contentText, ...styles.mBottom}}>{profile.linkedin}</Text>
+              <Text className="contact-label" style={styles.contentLabel}>Linkedin:</Text>
+              <Text className="contact-value" style={{ ...styles.contentText, ...styles.mBottom }}>{this.state.profile.linkedin}</Text>
 
-                <Text className="contact-label" style={styles.contentLabel}>Github:</Text>
-                <Text className="contact-value" style={styles.contentText}>{profile.github}</Text>
+              <Text className="contact-label" style={styles.contentLabel}>Github:</Text>
+              <Text className="contact-value" style={styles.contentText}>{this.state.profile.github}</Text>
             </Animated.View>
             <Animated.View className="contact-content" style={[styles.userContent, { opacity: this.fadeAnimation }]}>
-                <Text className="contact-label" style={styles.contentLabel}>E-mail:</Text>
-                <Text className="contact-value" style={{...styles.contentText, ...styles.mBottom}}>{profile.email}</Text>
+              <Text className="contact-label" style={styles.contentLabel}>E-mail:</Text>
+              <Text className="contact-value" style={{ ...styles.contentText, ...styles.mBottom }}>{this.state.profile.email}</Text>
 
-                <Text className="contact-label" style={styles.contentLabel}>Celular:</Text>
-                <Text className="contact-value" style={{...styles.contentText, ...styles.mBottom}}>{profile.phone}</Text>
+              <Text className="contact-label" style={styles.contentLabel}>Celular:</Text>
+              <Text className="contact-value" style={{ ...styles.contentText, ...styles.mBottom }}>{this.state.profile.phone}</Text>
 
-                <Text className="contact-label" style={styles.contentLabel}>Data de Nascimento:</Text>
-                <Text className="contact-value" style={{...styles.contentText, ...styles.mBottom}}>
-                  {moment(profile.birthday).format('DD/MM/YYYY')}
-                </Text>
+              <Text className="contact-label" style={styles.contentLabel}>Data de Nascimento:</Text>
+              <Text className="contact-value" style={{ ...styles.contentText, ...styles.mBottom }}>
+                {moment(this.state.profile.birthday).format('DD/MM/YYYY')}
+              </Text>
 
-                <Text className="contact-label" style={styles.contentLabel}>Sexo:</Text>
-                <Text className="contact-value" style={{...styles.contentText, ...styles.mBottom}}>
-                  {profile.gender === 1 ? 'Masculino' : 'Feminino'}
-                </Text>
+              <Text className="contact-label" style={styles.contentLabel}>Sexo:</Text>
+              <Text className="contact-value" style={{ ...styles.contentText, ...styles.mBottom }}>
+                {this.state.profile.gender === 1 ? 'Masculino' : 'Feminino'}
+              </Text>
 
-                <Text className="contact-label" style={styles.contentLabel}>Idiomas:</Text>
-                <View style={styles.languageContent}>
-                  {profile.language.map(language => (
-                    <View key={language} style={styles.language}>
-                      <Text className="contact-language" style={styles.languageText}>
-                        {language}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
+              <Text className="contact-label" style={styles.contentLabel}>Idiomas:</Text>
+              <View style={styles.languageContent}>
+                {this.state.profile.language.map(language => (
+                  <View key={language} style={styles.language}>
+                    <Text className="contact-language" style={styles.languageText}>
+                      {language}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             </Animated.View>
           </ScrollView>
         )}
       </View>
     );
-  }
+  };
 }
 
 const styles = StyleSheet.create({

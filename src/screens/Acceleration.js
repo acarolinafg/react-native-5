@@ -1,5 +1,7 @@
-import React from 'react';
-import { StyleSheet, Text, View, Image, FlatList } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, Image, FlatList, AsyncStorage, ActivityIndicator, TouchableHighlight } from 'react-native';
+import axios from 'axios'
+
 
 import AccelerationItem from '../components/AccelerationItem';
 
@@ -84,44 +86,89 @@ const accelerations = [{
 }]
 
 export default function Acceleration() {
+  const [accelerations, setAccelerations] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [imageProfile, setImageProfile] = useState('');
+  const load = async () => {
+    const { data } = await axios.get('https://api.codenation.dev/v1/acceleration');
+    setAccelerations(data);
+    setLoading(false);
+  }
+  const getProfileImage = async () => {
+    const user = JSON.parse(await AsyncStorage.getItem('user'));
+    setImageProfile(user.picture);
+  }
+  AsyncStorage.getItem('user').then(user => {
+    setImageProfile(JSON.parse(user).picture);
+  })
+
+  useEffect(() => {
+    load();
+  }, []);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Image
           style={styles.headerImage}
-          source={{uri: 'https://forum.codenation.com.br/uploads/default/original/2X/2/2d2d2a9469f0171e7df2c4ee97f70c555e431e76.png'}}
+          source={{ uri: 'https://forum.codenation.com.br/uploads/default/original/2X/2/2d2d2a9469f0171e7df2c4ee97f70c555e431e76.png' }}
         />
+        <TouchableHighlight onPress={() => props.navigation.navigate('Profile')}>
+          <Image
+            className="profile-image"
+            style={styles.profileImage}
+            source={{ uri: imageProfile }}
+          />
+
+        </TouchableHighlight>
       </View>
       <Text style={styles.title}>Acelerações</Text>
-      <FlatList
-        data={accelerations}
-        keyExtractor={item => item.slug}
-        renderItem={({item, index}) => <AccelerationItem item={item} />}
-      />
+      {
+        loading ?
+          <View style={styles.loadingContent}>
+            <ActivityIndicator size="large" color="#7800ff" />
+          </View>
+          :
+          <FlatList
+            data={accelerations}
+            keyExtractor={item => item.slug}
+            renderItem={({ item, index }) => <AccelerationItem item={item} />}
+          />}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
-    header: {
-        alignItems: 'center',
-        flexDirection: 'row',
-        borderBottomColor: '#7800ff',
-        borderBottomWidth: 2,
-        padding: 16,
-        paddingTop: 55
-    },
-    headerImage: {
-        height: 45,
-        width: 250
-    },
-    title: {
-        color: '#7800ff',
-        fontSize: 30,
-        padding: 16
-    }
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  loadingContent: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center'
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderBottomColor: '#7800ff',
+    borderBottomWidth: 2,
+    padding: 16,
+    paddingTop: 55
+  },
+  profileImage: {
+    borderRadius: 22,
+    height: 45,
+    width: 45
+  },
+  headerImage: {
+    height: 45,
+    width: 250
+  },
+  title: {
+    color: '#7800ff',
+    fontSize: 30,
+    padding: 16
+  }
 });
